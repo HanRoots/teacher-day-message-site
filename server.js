@@ -106,14 +106,15 @@ function isAdmin(req) {
 }
 
 function ossConfig() {
-  const accessId = process.env.OSS_ACCESS_KEY_ID;
-  const secret = process.env.OSS_ACCESS_KEY_SECRET;
+  const accessId = process.env.OSS_ACCESS_KEY_ID || process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
+  const secret = process.env.OSS_ACCESS_KEY_SECRET || process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
+  const securityToken = process.env.OSS_SECURITY_TOKEN || process.env.ALIBABA_CLOUD_SECURITY_TOKEN || '';
   const bucket = process.env.OSS_BUCKET;
   const region = process.env.OSS_REGION || 'oss-cn-hangzhou';
   const endpoint = (process.env.OSS_ENDPOINT || `https://${region}.aliyuncs.com`).replace(/\/$/, '');
   if (!accessId || !secret || !bucket) return null;
   const endpointHost = endpoint.replace(/^https?:\/\//, '');
-  return { accessId, secret, bucket, region, endpoint, host: `https://${bucket}.${endpointHost}` };
+  return { accessId, secret, securityToken, bucket, region, endpoint, host: `https://${bucket}.${endpointHost}` };
 }
 
 const OSS_MESSAGES_KEY = 'teacher-day/private/messages.json';
@@ -123,7 +124,8 @@ function ossRequest(method, key, body = null, contentType = '') {
   if (!config) return Promise.reject(Object.assign(new Error('OSS 尚未配置'), { status: 503 }));
   const date = new Date().toUTCString();
   const canonicalResource = `/${config.bucket}/${key}`;
-  const stringToSign = `${method}\n\n${contentType}\n${date}\n${canonicalResource}`;
+  const canonicalHeaders = config.securityToken ? `x-oss-security-token:${config.securityToken}\n` : '';
+  const stringToSign = `${method}\n\n${contentType}\n${date}\n${canonicalHeaders}${canonicalResource}`;
   const signature = crypto.createHmac('sha1', config.secret).update(stringToSign).digest('base64');
   const objectUrl = new URL(`${config.host}/${key.split('/').map(encodeURIComponent).join('/')}`);
   const headers = {
@@ -131,6 +133,7 @@ function ossRequest(method, key, body = null, contentType = '') {
     Authorization: `OSS ${config.accessId}:${signature}`
   };
   if (contentType) headers['Content-Type'] = contentType;
+  if (config.securityToken) headers['x-oss-security-token'] = config.securityToken;
   if (body) headers['Content-Length'] = Buffer.byteLength(body);
 
   return new Promise((resolve, reject) => {
@@ -190,6 +193,9 @@ function createOssUploadPolicy(contentType = 'audio/webm') {
       ['starts-with', '$Content-Type', 'audio/']
     ]
   };
+  if (config.securityToken) {
+    policyObject.conditions.push({ 'x-oss-security-token': config.securityToken });
+  }
   const policy = Buffer.from(JSON.stringify(policyObject)).toString('base64');
   const signature = crypto.createHmac('sha1', config.secret).update(policy).digest('base64');
   return {
@@ -199,6 +205,7 @@ function createOssUploadPolicy(contentType = 'audio/webm') {
     accessId: config.accessId,
     policy,
     signature,
+    securityToken: config.securityToken || undefined,
     publicUrl: `${config.host}/${key}`
   };
 }
@@ -209,7 +216,8 @@ function signedAudioUrl(key, fallbackUrl) {
   const expires = Math.floor(Date.now() / 1000) + 600;
   const resource = `/${config.bucket}/${key}`;
   const signature = crypto.createHmac('sha1', config.secret).update(`GET\n\n\n${expires}\n${resource}`).digest('base64');
-  return `${config.host}/${key}?OSSAccessKeyId=${encodeURIComponent(config.accessId)}&Expires=${expires}&Signature=${encodeURIComponent(signature)}`;
+  const token = config.securityToken ? `&security-token=${encodeURIComponent(config.securityToken)}` : '';
+  return `${config.host}/${key}?OSSAccessKeyId=${encodeURIComponent(config.accessId)}&Expires=${expires}&Signature=${encodeURIComponent(signature)}${token}`;
 }
 
 function sanitizeText(value, max) {

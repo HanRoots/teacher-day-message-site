@@ -141,6 +141,7 @@ async function uploadAudio(blob) {
     data.append('OSSAccessKeyId', policy.accessId);
     data.append('policy', policy.policy);
     data.append('Signature', policy.signature);
+    if (policy.securityToken) data.append('x-oss-security-token', policy.securityToken);
     data.append('success_action_status', '200');
     data.append('Content-Type', blob.type || 'audio/webm');
     data.append('file', blob, policy.key.split('/').pop());

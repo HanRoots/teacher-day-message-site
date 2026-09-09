@@ -11,7 +11,7 @@
 - 允许请求头：`*`
 - 暴露响应头：`ETag`
 
-创建最小权限 RAM 用户，仅允许访问当前 Bucket 下的：
+为函数绑定一个 RAM 执行角色，并仅允许该角色访问当前 Bucket 下的：
 
 - `teacher-day/*`
 
@@ -27,21 +27,21 @@
 - HTTP 触发器：允许匿名访问（API 自身保护管理接口）
 - 允许请求方法：GET、POST、PATCH、OPTIONS
 
-上传项目 ZIP 包后，配置以下环境变量：
+上传项目 ZIP 包后，绑定上述函数角色。函数计算会自动注入临时凭证，不需要保存长期 AccessKey。
+
+然后配置以下环境变量：
 
 ```text
 ADMIN_PASSWORD=后台强密码
 SESSION_SECRET=至少32位随机字符串
 FRONTEND_ORIGIN=https://hanroots.github.io
-OSS_ACCESS_KEY_ID=RAM用户AccessKey ID
-OSS_ACCESS_KEY_SECRET=RAM用户AccessKey Secret
 OSS_BUCKET=Bucket名称
 OSS_REGION=oss-cn-hangzhou
 OSS_PRIVATE=true
 MAX_AUDIO_BYTES=8388608
 ```
 
-不要把 AccessKey 写入源码、GitHub 或聊天消息。
+不要把 AccessKey 写入源码、GitHub、函数环境变量或聊天消息。本地调试确有需要时，才使用 `.env` 中的 `OSS_ACCESS_KEY_ID`、`OSS_ACCESS_KEY_SECRET` 和 `OSS_SECURITY_TOKEN`。
 
 ## 3. 连接 GitHub Pages
 

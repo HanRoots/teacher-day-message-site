@@ -3,7 +3,6 @@ const teacherInput = document.querySelector('#teacher');
 const messageInput = document.querySelector('#message');
 const senderInput = document.querySelector('#sender');
 const characterCount = document.querySelector('#characterCount');
-const promptButtons = [...document.querySelectorAll('.prompt-chip')];
 const recordButton = document.querySelector('#recordButton');
 const stopButton = document.querySelector('#stopButton');
 const rerecordButton = document.querySelector('#rerecordButton');
@@ -46,18 +45,6 @@ buildWaveform();
 
 messageInput.addEventListener('input', () => {
   characterCount.textContent = `${messageInput.value.length}/500`;
-});
-
-promptButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    const sentence = button.textContent.trim();
-    button.classList.toggle('selected');
-    if (!messageInput.value.includes(sentence)) {
-      messageInput.value = `${messageInput.value.trim()}${messageInput.value.trim() ? '，' : ''}${sentence}。`;
-      messageInput.dispatchEvent(new Event('input'));
-    }
-    messageInput.focus();
-  });
 });
 
 function resetVoice() {
@@ -218,7 +205,6 @@ form.addEventListener('submit', async event => {
     if (!response.ok) throw new Error(result.error || '留言提交失败');
     form.reset();
     characterCount.textContent = '0/500';
-    promptButtons.forEach(button => button.classList.remove('selected'));
     resetVoice();
     successToast.hidden = false;
   } catch (error) {

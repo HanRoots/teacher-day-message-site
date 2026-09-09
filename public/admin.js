@@ -9,6 +9,7 @@ const searchInput = document.querySelector('#searchInput');
 const filterButtons = [...document.querySelectorAll('[data-filter]')];
 const API_BASE = String(window.APP_CONFIG?.apiBase || '').replace(/\/$/, '');
 const apiUrl = path => `${API_BASE}${path}`;
+const API_CONFIGURED = Boolean(API_BASE) || ['localhost', '127.0.0.1'].includes(location.hostname);
 let adminToken = sessionStorage.getItem('teacherAdminToken') || '';
 
 function adminFetch(path, options = {}) {
@@ -100,6 +101,13 @@ async function markListened(id, listened) {
 }
 
 async function loadMessages() {
+  if (!API_CONFIGURED) {
+    loginLayer.hidden = false;
+    loginError.textContent = '云端后台服务尚未连接，请先配置 API_BASE_URL。';
+    passwordInput.disabled = true;
+    loginForm.querySelector('button').disabled = true;
+    return;
+  }
   const response = await adminFetch('/api/admin/messages');
   if (response.status === 401) {
     loginLayer.hidden = false;

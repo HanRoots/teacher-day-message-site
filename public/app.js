@@ -22,6 +22,7 @@ const closeToast = document.querySelector('#closeToast');
 const waveform = document.querySelector('#waveform');
 const API_BASE = String(window.APP_CONFIG?.apiBase || '').replace(/\/$/, '');
 const apiUrl = path => `${API_BASE}${path}`;
+const API_CONFIGURED = Boolean(API_BASE) || ['localhost', '127.0.0.1'].includes(location.hostname);
 
 let recorder;
 let mediaStream;
@@ -179,6 +180,10 @@ async function uploadAudio(blob) {
 form.addEventListener('submit', async event => {
   event.preventDefault();
   formError.textContent = '';
+  if (!API_CONFIGURED) {
+    formError.textContent = '云端留言服务正在连接中，请稍后再来。';
+    return;
+  }
   const teacher = teacherInput.value.trim();
   const message = messageInput.value.trim();
   if (!teacher) {

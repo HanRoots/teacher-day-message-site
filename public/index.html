@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173f35">
+  <meta name="description" content="写给老师的一封教师节留言，也可以录下一段想说的话。">
+  <title>致老师 · 教师节留言</title>
+  <link rel="stylesheet" href="./styles.css?v=20260909b">
+</head>
+<body>
+  <main class="page-shell">
+    <header class="masthead" aria-label="页面标题">
+      <a class="brand" href="./">致老师<span aria-hidden="true"></span></a>
+      <p class="chalk-note" aria-hidden="true">三尺讲台<br>种下更大的远方</p>
+    </header>
+
+    <article class="letter">
+      <img class="carnation" src="./assets/carnation.png" alt="" aria-hidden="true">
+      <div class="letter-heading">
+        <h1>想对老师说的话</h1>
+        <p>有些感谢，值得认真写下来。</p>
+      </div>
+
+      <form id="messageForm" novalidate>
+        <div class="field-group">
+          <label for="teacher">老师的称呼</label>
+          <input id="teacher" name="teacher" type="text" maxlength="40" placeholder="例如：张老师、王老师、亲爱的老师" autocomplete="off" required>
+        </div>
+
+        <fieldset class="prompt-group">
+          <legend>选择一句想说的话</legend>
+          <div class="prompt-list">
+            <button type="button" class="prompt-chip">谢谢您的耐心</button>
+            <button type="button" class="prompt-chip">您辛苦了</button>
+            <button type="button" class="prompt-chip">祝您教师节快乐</button>
+          </div>
+        </fieldset>
+
+        <div class="field-group message-field">
+          <div class="label-row">
+            <label for="message">写下你的祝福</label>
+            <span id="characterCount">0/500</span>
+          </div>
+          <textarea id="message" name="message" maxlength="500" rows="5" placeholder="从一句谢谢开始…"></textarea>
+        </div>
+
+        <section class="voice-card" aria-labelledby="voiceTitle">
+          <div class="voice-idle" id="voiceIdle">
+            <span class="mic-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="12" rx="4"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"></path></svg>
+            </span>
+            <div class="voice-copy">
+              <h2 id="voiceTitle">也可以录一段话</h2>
+              <p>最长 60 秒</p>
+            </div>
+            <button class="record-button" id="recordButton" type="button">开始录音</button>
+          </div>
+
+          <div class="recording-state" id="recordingState" hidden>
+            <span class="record-dot" aria-hidden="true"></span>
+            <div><strong>正在录音</strong><span id="recordingTime">00:00 / 01:00</span></div>
+            <button type="button" id="stopButton">完成</button>
+          </div>
+
+          <div class="voice-ready" id="voiceReady" hidden>
+            <button type="button" class="play-button" id="playButton" aria-label="播放录音">
+              <svg class="play-icon" viewBox="0 0 24 24"><path d="m9 7 8 5-8 5z"></path></svg>
+              <svg class="pause-icon" viewBox="0 0 24 24"><path d="M8 6h3v12H8zM13 6h3v12h-3z"></path></svg>
+            </button>
+            <div class="waveform" id="waveform" aria-hidden="true"></div>
+            <span class="duration" id="duration">00:00</span>
+            <button type="button" class="rerecord" id="rerecordButton">重录</button>
+            <audio id="audioPreview"></audio>
+          </div>
+          <p class="voice-error" id="voiceError" role="alert"></p>
+        </section>
+
+        <div class="field-group">
+          <label for="sender">你的名字 <span>（选填）</span></label>
+          <input id="sender" name="sender" type="text" maxlength="40" placeholder="例如：小明 / 三年级一班 / 一位家长" autocomplete="name">
+        </div>
+
+        <p class="form-error" id="formError" role="alert"></p>
+        <button class="submit-button" id="submitButton" type="submit">
+          <span>送出这份心意</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 3-7.5 18-3.6-7.9L2 9.5 21 3Z"></path><path d="m9.9 13.1 5.5-4.5"></path></svg>
+        </button>
+        <p class="privacy-note"><span></span>你的留言会被温柔珍藏<span></span></p>
+      </form>
+    </article>
+
+    <footer class="page-footer" aria-hidden="true">
+      <p>感谢您<br>点亮我前行的路 <span>♡</span></p>
+      <div class="book">好的老师<br>以爱唤醒爱</div>
+    </footer>
+  </main>
+
+  <div class="toast" id="successToast" role="status" aria-live="polite" hidden>
+    <span class="check-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
+    <div><strong>心意已送达</strong><p>谢谢你，让温暖继续传递。</p></div>
+    <button type="button" id="closeToast" aria-label="关闭">×</button>
+  </div>
+  <script src="./config.js?v=20260909"></script>
+  <script src="./app.js?v=20260909" defer></script>
+</body>
+</html>

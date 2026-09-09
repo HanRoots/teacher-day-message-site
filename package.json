@@ -1,0 +1,14 @@
+{
+  "name": "to-teacher-message",
+  "version": "1.0.0",
+  "private": true,
+  "description": "教师节文字与语音留言页",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "NODE_ENV=production node server.js",
+    "check": "node --check server.js && node --check public/app.js && node --check public/admin.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#143b33">
+  <title>致老师 · 留言管理</title>
+  <link rel="stylesheet" href="./admin.css?v=20260909">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <a class="admin-brand" href="./">致老师<span>留言管理</span></a>
+      <nav aria-label="管理导航">
+        <button class="nav-item active" type="button">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v12H7l-3 3V5Z"></path><path d="M8 9h8M8 13h5"></path></svg>
+          全部留言
+        </button>
+      </nav>
+      <div class="sidebar-note"><span></span><p>每一句真诚的话<br>都值得被认真听见</p></div>
+      <button id="logoutButton" class="logout-button" type="button">退出登录</button>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div><p id="todayLabel"></p><h1>老师，今天也有新的心意</h1></div>
+        <a class="view-entry" href="./" target="_blank">查看留言入口 <span>↗</span></a>
+      </header>
+
+      <section class="stats" aria-label="留言概况">
+        <article><span>全部留言</span><strong id="totalCount">0</strong><small>份心意</small></article>
+        <article><span>还未听见</span><strong id="unreadCount">0</strong><small>条待查看</small></article>
+        <article><span>语音留言</span><strong id="audioCount">0</strong><small>段声音</small></article>
+      </section>
+
+      <section class="inbox">
+        <div class="toolbar">
+          <div class="filter-tabs" role="tablist" aria-label="筛选留言">
+            <button class="active" data-filter="all" type="button">全部</button>
+            <button data-filter="unread" type="button">未听</button>
+            <button data-filter="audio" type="button">有语音</button>
+          </div>
+          <label class="search-box">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg>
+            <input id="searchInput" type="search" placeholder="搜索老师、留言或署名">
+          </label>
+        </div>
+        <div id="messageList" class="message-list" aria-live="polite"></div>
+        <div id="emptyState" class="empty-state" hidden>
+          <span>“</span><h2>这里还很安静</h2><p>新的教师节留言会出现在这里。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="login-layer" id="loginLayer">
+    <form class="login-card" id="loginForm">
+      <div class="login-seal">师</div>
+      <h1>欢迎回来</h1>
+      <p>登录后查看写给老师的文字与声音</p>
+      <label for="password">管理员密码</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="请输入密码" required>
+      <p class="login-error" id="loginError" role="alert"></p>
+      <button type="submit">进入留言簿</button>
+    </form>
+  </div>
+  <script src="./config.js?v=20260909"></script>
+  <script src="./admin.js?v=20260909" defer></script>
+</body>
+</html>

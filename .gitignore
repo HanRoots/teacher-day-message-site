@@ -1,0 +1,7 @@
+.env
+data/uploads/*
+!data/uploads/.gitkeep
+data/messages.json
+.DS_Store
+work/
+outputs/

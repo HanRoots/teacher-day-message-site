@@ -214,7 +214,10 @@ function signedAudioUrl(key, fallbackUrl) {
   const config = ossConfig();
   if (!config || !key || process.env.OSS_PRIVATE !== 'true') return fallbackUrl;
   const expires = Math.floor(Date.now() / 1000) + 600;
-  const resource = `/${config.bucket}/${key}`;
+  // OSS V1 query signing treats the STS security token as a canonical
+  // sub-resource. It must be included in the string to sign as well as the
+  // final URL, otherwise private audio playback returns SignatureDoesNotMatch.
+  const resource = `/${config.bucket}/${key}${config.securityToken ? `?security-token=${config.securityToken}` : ''}`;
   const signature = crypto.createHmac('sha1', config.secret).update(`GET\n\n\n${expires}\n${resource}`).digest('base64');
   const token = config.securityToken ? `&security-token=${encodeURIComponent(config.securityToken)}` : '';
   return `${config.host}/${key}?OSSAccessKeyId=${encodeURIComponent(config.accessId)}&Expires=${expires}&Signature=${encodeURIComponent(signature)}${token}`;

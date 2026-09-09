@@ -1,8 +1,6 @@
 const form = document.querySelector('#messageForm');
 const teacherInput = document.querySelector('#teacher');
-const messageInput = document.querySelector('#message');
 const senderInput = document.querySelector('#sender');
-const characterCount = document.querySelector('#characterCount');
 const recordButton = document.querySelector('#recordButton');
 const stopButton = document.querySelector('#stopButton');
 const rerecordButton = document.querySelector('#rerecordButton');
@@ -42,10 +40,6 @@ function buildWaveform() {
   waveform.innerHTML = heights.map(height => `<i style="height:${height}px"></i>`).join('');
 }
 buildWaveform();
-
-messageInput.addEventListener('input', () => {
-  characterCount.textContent = `${messageInput.value.length}/500`;
-});
 
 function resetVoice() {
   clearInterval(timerId);
@@ -172,15 +166,15 @@ form.addEventListener('submit', async event => {
     return;
   }
   const teacher = teacherInput.value.trim();
-  const message = messageInput.value.trim();
+  const message = '';
   if (!teacher) {
     formError.textContent = '请先写下老师的称呼。';
     teacherInput.focus();
     return;
   }
-  if (!message && !audioBlob) {
-    formError.textContent = '写一句祝福，或录一段想说的话吧。';
-    messageInput.focus();
+  if (!audioBlob) {
+    formError.textContent = '请先录一段想对老师说的话。';
+    recordButton.focus();
     return;
   }
 
@@ -204,7 +198,6 @@ form.addEventListener('submit', async event => {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || '留言提交失败');
     form.reset();
-    characterCount.textContent = '0/500';
     resetVoice();
     successToast.hidden = false;
   } catch (error) {

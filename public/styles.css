@@ -158,10 +158,6 @@ input:focus, textarea:focus { border-color: var(--green-700); box-shadow: 0 0 0 
 
 button:focus-visible { outline: 3px solid rgba(188,79,61,.25); outline-offset: 2px; }
 
-.label-row { display: flex; justify-content: space-between; align-items: baseline; }
-.label-row span { color: #929894; font-size: 13px; }
-.message-field { margin-bottom: 16px; }
-
 .voice-card {
   margin-bottom: 28px;
   padding: 13px;

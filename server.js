@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -17,8 +18,10 @@ if (IS_PRODUCTION && (!ADMIN_PASSWORD || !SESSION_SECRET)) {
   throw new Error('生产环境必须配置 ADMIN_PASSWORD 和 SESSION_SECRET');
 }
 
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, '[]');
+if (!IS_PRODUCTION) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, '[]');
+}
 
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -63,12 +66,12 @@ async function readJson(req) {
   catch { throw Object.assign(new Error('JSON 格式错误'), { status: 400 }); }
 }
 
-function readMessages() {
+function readLocalMessages() {
   try { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); }
   catch { return []; }
 }
 
-function writeMessages(messages) {
+function writeLocalMessages(messages) {
   const temp = `${DATA_FILE}.tmp`;
   fs.writeFileSync(temp, JSON.stringify(messages, null, 2));
   fs.renameSync(temp, DATA_FILE);
@@ -111,6 +114,64 @@ function ossConfig() {
   if (!accessId || !secret || !bucket) return null;
   const endpointHost = endpoint.replace(/^https?:\/\//, '');
   return { accessId, secret, bucket, region, endpoint, host: `https://${bucket}.${endpointHost}` };
+}
+
+const OSS_MESSAGES_KEY = 'teacher-day/private/messages.json';
+
+function ossRequest(method, key, body = null, contentType = '') {
+  const config = ossConfig();
+  if (!config) return Promise.reject(Object.assign(new Error('OSS 尚未配置'), { status: 503 }));
+  const date = new Date().toUTCString();
+  const canonicalResource = `/${config.bucket}/${key}`;
+  const stringToSign = `${method}\n\n${contentType}\n${date}\n${canonicalResource}`;
+  const signature = crypto.createHmac('sha1', config.secret).update(stringToSign).digest('base64');
+  const objectUrl = new URL(`${config.host}/${key.split('/').map(encodeURIComponent).join('/')}`);
+  const headers = {
+    Date: date,
+    Authorization: `OSS ${config.accessId}:${signature}`
+  };
+  if (contentType) headers['Content-Type'] = contentType;
+  if (body) headers['Content-Length'] = Buffer.byteLength(body);
+
+  return new Promise((resolve, reject) => {
+    const request = https.request(objectUrl, { method, headers }, response => {
+      const chunks = [];
+      response.on('data', chunk => chunks.push(chunk));
+      response.on('end', () => resolve({
+        status: response.statusCode || 500,
+        headers: response.headers,
+        body: Buffer.concat(chunks)
+      }));
+    });
+    request.on('error', reject);
+    if (body) request.write(body);
+    request.end();
+  });
+}
+
+async function readMessages() {
+  if (!ossConfig()) return readLocalMessages();
+  const response = await ossRequest('GET', OSS_MESSAGES_KEY);
+  if (response.status === 404) return [];
+  if (response.status !== 200) {
+    throw Object.assign(new Error(`读取 OSS 留言失败（${response.status}）`), { status: 502 });
+  }
+  try { return JSON.parse(response.body.toString('utf8') || '[]'); }
+  catch { throw Object.assign(new Error('OSS 留言数据格式错误'), { status: 502 }); }
+}
+
+async function writeMessages(messages) {
+  if (!ossConfig()) return writeLocalMessages(messages);
+  const payload = JSON.stringify(messages, null, 2);
+  const response = await ossRequest('PUT', OSS_MESSAGES_KEY, payload, 'application/json; charset=utf-8');
+  if (response.status < 200 || response.status >= 300) {
+    throw Object.assign(new Error(`保存 OSS 留言失败（${response.status}）`), { status: 502 });
+  }
+}
+
+async function ossObjectExists(key) {
+  const response = await ossRequest('HEAD', key);
+  return response.status === 200;
 }
 
 function createOssUploadPolicy(contentType = 'audio/webm') {
@@ -211,6 +272,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'POST' && url.pathname === '/api/audio') {
+      if (IS_PRODUCTION) return json(res, 503, { error: '生产环境仅允许语音直传 OSS' });
       const contentType = String(req.headers['content-type'] || '');
       if (!contentType.startsWith('audio/')) return json(res, 415, { error: '仅支持音频文件' });
       const buffer = await readBody(req, MAX_AUDIO_BYTES);
@@ -225,18 +287,23 @@ const server = http.createServer(async (req, res) => {
       const teacher = sanitizeText(body.teacher, 40);
       const message = sanitizeText(body.message, 500);
       const sender = sanitizeText(body.sender, 40);
-      const audioUrl = sanitizeText(body.audioUrl, 1000);
+      const config = ossConfig();
       const audioKey = sanitizeText(body.audioKey, 500);
+      const audioUrl = config && audioKey ? `${config.host}/${audioKey}` : sanitizeText(body.audioUrl, 1000);
       const duration = Math.max(0, Math.min(60, Number(body.duration) || 0));
       if (!teacher) return json(res, 400, { error: '请填写老师的称呼' });
-      if (!message && !audioUrl) return json(res, 400, { error: '请写一句祝福，或录一段话' });
-      const messages = readMessages();
+      if (!audioUrl) return json(res, 400, { error: '请先录一段想对老师说的话' });
+      if (config) {
+        if (!audioKey.startsWith('teacher-day/')) return json(res, 400, { error: '语音文件地址无效' });
+        if (!await ossObjectExists(audioKey)) return json(res, 400, { error: '未找到已上传的语音文件' });
+      }
+      const messages = await readMessages();
       const record = {
         id: crypto.randomUUID(), teacher, message, sender, audioUrl, audioKey,
         duration: Math.round(duration), listened: false, createdAt: new Date().toISOString()
       };
       messages.unshift(record);
-      writeMessages(messages.slice(0, 5000));
+      await writeMessages(messages.slice(0, 5000));
       return json(res, 201, { ok: true, id: record.id });
     }
 
@@ -258,7 +325,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && url.pathname === '/api/admin/messages') {
-      const messages = readMessages().map(item => ({
+      const messages = (await readMessages()).map(item => ({
         ...item,
         playbackUrl: item.audioUrl ? signedAudioUrl(item.audioKey, item.audioUrl) : ''
       }));
@@ -268,11 +335,11 @@ const server = http.createServer(async (req, res) => {
     const messageMatch = url.pathname.match(/^\/api\/admin\/messages\/([a-f0-9-]+)$/i);
     if (req.method === 'PATCH' && messageMatch) {
       const body = await readJson(req);
-      const messages = readMessages();
+      const messages = await readMessages();
       const record = messages.find(item => item.id === messageMatch[1]);
       if (!record) return json(res, 404, { error: '留言不存在' });
       if (typeof body.listened === 'boolean') record.listened = body.listened;
-      writeMessages(messages);
+      await writeMessages(messages);
       return json(res, 200, { ok: true });
     }
 
@@ -283,7 +350,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`教师节留言页：http://localhost:${PORT}`);
   console.log(`留言管理后台：http://localhost:${PORT}/admin`);
   if (!ossConfig()) console.log('提示：OSS 未配置，录音将暂存本机 data/uploads 目录。');

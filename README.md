@@ -30,7 +30,7 @@ OSS Bucket 需配置 CORS：允许页面正式域名发起 `POST`，允许请求
 
 GitHub Pages 上的管理后台地址为站点根目录下的 `admin.html`。
 
-前端可托管在 GitHub Pages；`server.js` 需要部署在支持 Node.js 与持久磁盘/数据库的云服务上。阿里云 ECS、轻量应用服务器或容器服务都适合，不能直接运行在 GitHub Pages。
+前端托管在 GitHub Pages；后端推荐部署为阿里云函数计算 Web 函数。语音和留言索引都保存到 OSS，不依赖函数实例的临时磁盘。具体步骤见 `DEPLOY-ALIYUN.md`。
 
 ## 部署提醒
 

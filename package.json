@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node server.js",
     "start": "NODE_ENV=production node server.js",
+    "start:fc": "PORT=9000 NODE_ENV=production node server.js",
     "check": "node --check server.js && node --check public/app.js && node --check public/admin.js"
   },
   "engines": {
